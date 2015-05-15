@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+[ ! -f erlang/rebar ] && wget 'https://github.com/rebar/rebar/wiki/rebar' -O erlang/rebar && chmod +x erlang/rebar
+CURRENT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export PATH="${CURRENT}/erlang:${PATH}"
+export TIMEFORMAT=%R
+cd erlang/mapreduce_riak_pipe
+rebar get-deps
+rebar compile
+echo 'start timed run'
+time erl -noinput -name mapreduce@127.0.0.1 -pa ebin -pa deps/*/ebin -run mapreduce

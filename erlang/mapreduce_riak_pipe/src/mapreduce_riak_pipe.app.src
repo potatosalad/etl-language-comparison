@@ -1,0 +1,17 @@
+{application, mapreduce_riak_pipe, [
+	{vsn, "0.0.1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		lager,
+		sasl,
+		crypto,
+		riak_core,
+		os_mon,
+		riak_pipe
+	]},
+	{mod, {mapreduce_riak_pipe_app, []}},
+	{env, []},
+	{modules, []}
+]}.
