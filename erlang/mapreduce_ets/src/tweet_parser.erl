@@ -4,61 +4,50 @@
 
 -define(TABLE, mapreduce).
 
-parse(<<>>) ->
-	ok;
+-define(SEARCH, [
+	<<"knicks">>,<<"Knicks">>,<<"kNicks">>,<<"KNicks">>,
+	<<"knIcks">>,<<"KnIcks">>,<<"kNIcks">>,<<"KNIcks">>,
+	<<"kniCks">>,<<"KniCks">>,<<"kNiCks">>,<<"KNiCks">>,
+	<<"knICks">>,<<"KnICks">>,<<"kNICks">>,<<"KNICks">>,
+	<<"knicKs">>,<<"KnicKs">>,<<"kNicKs">>,<<"KNicKs">>,
+	<<"knIcKs">>,<<"KnIcKs">>,<<"kNIcKs">>,<<"KNIcKs">>,
+	<<"kniCKs">>,<<"KniCKs">>,<<"kNiCKs">>,<<"KNiCKs">>,
+	<<"knICKs">>,<<"KnICKs">>,<<"kNICKs">>,<<"KNICKs">>,
+	<<"knickS">>,<<"KnickS">>,<<"kNickS">>,<<"KNickS">>,
+	<<"knIckS">>,<<"KnIckS">>,<<"kNIckS">>,<<"KNIckS">>,
+	<<"kniCkS">>,<<"KniCkS">>,<<"kNiCkS">>,<<"KNiCkS">>,
+	<<"knICkS">>,<<"KnICkS">>,<<"kNICkS">>,<<"KNICkS">>,
+	<<"knicKS">>,<<"KnicKS">>,<<"kNicKS">>,<<"KNicKS">>,
+	<<"knIcKS">>,<<"KnIcKS">>,<<"kNIcKS">>,<<"KNIcKS">>,
+	<<"kniCKS">>,<<"KniCKS">>,<<"kNiCKS">>,<<"KNiCKS">>,
+	<<"knICKS">>,<<"KnICKS">>,<<"kNICKS">>,<<"KNICKS">>
+]).
+
 parse(Binary) ->
-	parse_tweet(Binary).
+	parse(Binary, binary:compile_pattern(<< $\n >>), binary:compile_pattern(<< $\t >>), binary:compile_pattern(?SEARCH)).
 
-parse_tweet(<< $\t, Rest/binary >>) ->
-	parse_tweet_hood(Rest, <<>>);
-parse_tweet(<< _, Rest/binary >>) ->
-	parse_tweet(Rest);
-parse_tweet(<<>>) ->
-	ok.
-
-parse_tweet_hood(<< $\t, Rest/binary >>, Hood) ->
-	parse_next_tab(Rest, Hood);
-parse_tweet_hood(<< $\n, Rest/binary >>, _Hood) ->
-	parse(Rest);
-parse_tweet_hood(<< C, Rest/binary >>, Hood) ->
-	parse_tweet_hood(Rest, << Hood/binary, C >>);
-parse_tweet_hood(<<>>, _Hood) ->
-	ok.
-
-parse_next_tab(<< $\t, Rest/binary >>, Hood) ->
-	parse_tweet_message(Rest, Hood);
-parse_next_tab(<< $\n, Rest/binary >>, _Hood) ->
-	parse(Rest);
-parse_next_tab(<< _, Rest/binary >>, Hood) ->
-	parse_next_tab(Rest, Hood);
-parse_next_tab(<<>>, _Hood) ->
-	ok.
-
-parse_tweet_message(<< K, Rest/binary >>, Hood)
-		when (K =:= $K orelse K =:= $k) ->
-	parse_tweet_message_match(Rest, Hood);
-parse_tweet_message(<< $\n, Rest/binary >>, _Hood) ->
-	parse(Rest);
-parse_tweet_message(<< _, Rest/binary >>, Hood) ->
-	parse_tweet_message(Rest, Hood);
-parse_tweet_message(<<>>, _Hood) ->
-	ok.
-
-parse_tweet_message_match(<< N, I, C, K, S, Rest/binary >>, Hood)
-		when (N =:= $N orelse N =:= $n)
-		andalso (I =:= $I orelse I =:= $i)
-		andalso (C =:= $C orelse C =:= $c)
-		andalso (K =:= $K orelse K =:= $k)
-		andalso (S =:= $S orelse S =:= $s) ->
-	ets:insert_new(?TABLE, {Hood, 0}),
-	ets:update_counter(?TABLE, Hood, 1),
-	parse_next_line(Rest);
-parse_tweet_message_match(Rest, Hood) ->
-	parse_tweet_message(Rest, Hood).
-
-parse_next_line(<< $\n, Rest/binary >>) ->
-	parse(Rest);
-parse_next_line(<< _, Rest/binary >>) ->
-	parse_next_line(Rest);
-parse_next_line(<<>>) ->
-	ok.
+parse(Binary, Newline, Tab, Search) ->
+	case binary:match(Binary, Newline) of
+		{Pos, _} ->
+			case binary:match(Binary, Search, [{scope, {0, Pos}}]) of
+				{_, _} ->
+					case binary:match(Binary, Tab) of
+						{A, _} ->
+							case binary:match(Binary, Tab, [{scope, {A+1, Pos-A-1}}]) of
+								{B, _} ->
+									Hood = binary:part(Binary, A+1, B-A-1),
+									ets:insert_new(?TABLE, {Hood, 0}),
+									ets:update_counter(?TABLE, Hood, 1),
+									parse(binary:part(Binary, Pos+1, byte_size(Binary)-Pos-1), Newline, Tab, Search);
+								_ ->
+									erlang:error(badarg)
+							end;
+						_ ->
+							erlang:error(badarg)
+					end;
+				_ ->
+					parse(binary:part(Binary, Pos+1, byte_size(Binary)-Pos-1), Newline, Tab, Search)
+			end;
+		_ ->
+			ok
+	end.
