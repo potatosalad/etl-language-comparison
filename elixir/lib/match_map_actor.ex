@@ -32,7 +32,7 @@ defmodule MatchMapActor do
         :erlang.error(:badarg)
       matches ->
         [{a, _}, {b, _}] = :lists.nthtail(length(matches) - 3, :lists.droplast(matches))
-        String.to_atom :binary.part(binary, a + 1, b - a)
+        String.to_atom :binary.part(binary, a + 1, b - a - 1)
     end
   end
   defp find_hood(binary, tab, pos, _) do
@@ -41,7 +41,7 @@ defmodule MatchMapActor do
         :erlang.error(:badarg)
       matches ->
         [{a, _}, {b, _}] = :lists.nthtail(length(matches) - 3, :lists.droplast(matches))
-        String.to_atom :binary.part(binary, a + 1, b - a)
+        String.to_atom :binary.part(binary, a + 1, b - a - 1)
     end
   end
 end
