@@ -15,7 +15,9 @@ defmodule Mix.Tasks.Mapreduce do
   end
 
   defp arg_to_actor("binary"), do: BinaryMapActor
+  defp arg_to_actor("match"), do: MatchMapActor
   defp arg_to_actor("regex"), do: RegexMapActor
+  defp arg_to_actor("split"), do: SplitMapActor
 
   defp generate_input_files(input_dir) do
     File.ls!(input_dir)

@@ -11,14 +11,26 @@ case "$1" in
   echo 'Start binary run'
   time mix mapreduce "binary"
   ;;
+"match")
+  echo 'Start match run'
+  time mix mapreduce "match"
+  ;;
 "regex")
   echo 'Start regex run'
   time mix mapreduce "regex"
   ;;
+"split")
+  echo 'Start split run'
+  time mix mapreduce "split"
+  ;;
 *)
   echo 'Start binary run'
   time mix mapreduce "binary"
+  echo 'Start match run'
+  time mix mapreduce "match"
   echo 'Start regex run'
   time mix mapreduce "regex"
+  echo 'Start split run'
+  time mix mapreduce "split"
   ;;
 esac
